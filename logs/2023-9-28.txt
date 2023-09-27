@@ -1,0 +1,16 @@
+【test】 loss：10.575839 accuracy：0.8570 micro_f1：0.8630 macro_f1：0.8251
+/home/dawnlab/anaconda3/envs/lrgnn_g/lib/python3.8/site-packages/sklearn/metrics/_classification.py:1344: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in samples with no predicted labels. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+                       precision    recall  f1-score   support
+
+        Diagnosis   0       0.93      0.82      0.87       103
+        Treatment   1       0.86      0.92      0.89       260
+Common Knowledge    2       0.82      0.73      0.77       212
+healthy lifestyle   3       0.93      0.95      0.94       251
+    Epidemiololgy   4       0.87      0.93      0.90       118
+            Other   5       0.64      0.52      0.57        56
+
+            micro avg       0.87      0.86      0.86      1000
+            macro avg       0.84      0.81      0.83      1000
+         weighted avg       0.87      0.86      0.86      1000
+          samples avg       0.86      0.86      0.86      1000
