@@ -19,18 +19,57 @@ logger = logging.getLogger(__name__)
 
 os.environ["LD_LIBRARY_PATH"] = "/usr/local/cuda/lib64"
 os.environ["CUDA_HOME"] = "/usr/local/cuda"
+
+def get_parameter_number(net):
+    total_num = sum(p.numel() for p in net.parameters())
+    trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    return {'Total': total_num, 'Trainable': trainable_num}
+
+class MarginLoss(nn.Module):
+    def __init__(self,margin):
+        super().__init__()
+        self.margin = margin
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, score, label): # score(batch,label_num)  label(batch,label_num)
+        batch = score.shape[0]
+        # print(score.shape)
+        pos = torch.masked_select(score, label>0.5).view(batch,-1)
+        # print(pos)
+        neg = torch.masked_select(score, label<0.5).view(batch,-1)
+        # print(neg.shape)
+        neg_num = neg.shape[1]
+        pos = pos.repeat(1,neg_num)
+        zero_tensor = torch.zeros(batch, neg_num).to(self.device)
+        loss = torch.max(-pos + neg + self.margin, zero_tensor)
+        loss = torch.sum(loss) / neg_num
+        return loss
+
+
 class Trainer:
     def __init__(self, args, train_loader, dev_loader, test_loader):
         self.args = args
         gpu_ids = args.gpu_ids.split(',')
         self.device = torch.device("cpu" if gpu_ids[0] == '-1' else "cuda:" + gpu_ids[0])
-        self.model = models.BertForMultiLabelClassification(args)
+        self.model_name = args.model_name
+
+        if args.model_name == "classification":
+            self.model = models.BertForMultiLabelClassification(args)
+            self.criterion = nn.BCEWithLogitsLoss()
+        elif args.model_name == "rank":
+            self.model = models.BertForRank(args)
+            self.criterion = MarginLoss(margin=1)
+        else:
+            raise "unknown model"
+        print(get_parameter_number(self.model))
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=self.args.lr)
-        self.criterion = nn.BCEWithLogitsLoss()
         self.train_loader = train_loader
         self.dev_loader = dev_loader
         self.test_loader = test_loader
         self.model.to(self.device)
+
+    def margin_loss(self, score, label):
+        pass
 
     def load_ckp(self, model, optimizer, checkpoint_path):
         checkpoint = torch.load(checkpoint_path)
@@ -58,6 +97,8 @@ class Trainer:
         eval_step = 100
         best_dev_micro_f1 = 0.0
         for epoch in range(args.train_epochs):
+            step_count = 0
+            epo_mean_loss = 0.
             for train_step, train_data in enumerate(self.train_loader):
                 self.model.train()
                 token_ids = train_data['token_ids'].to(self.device)
@@ -69,8 +110,10 @@ class Trainer:
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+                epo_mean_loss += loss.item()
+                step_count += 1
                 logger.info(
-                    "【train】 epoch：{} step:{}/{} loss：{:.6f}".format(epoch, global_step, total_step, loss.item()))
+                    "【train】 epoch：{} step:{}/{} loss：{:.4f} mean_loss：{:.4f}".format(epoch, global_step, total_step, loss.item(),epo_mean_loss/step_count))
                 global_step += 1
                 if global_step % eval_step == 0:
                     dev_loss, dev_outputs, dev_targets = self.dev()
@@ -105,8 +148,14 @@ class Trainer:
                 loss = self.criterion(outputs, labels)
                 # val_loss = val_loss + ((1 / (dev_step + 1))) * (loss.item() - val_loss)
                 total_loss += loss.item()
-                outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
-                outputs = (np.array(outputs) > 0.6).astype(int)
+                if self.model_name == "classification":
+                    outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
+                    outputs = (np.array(outputs) > 0.6).astype(int)
+                else:
+                    outputs = np.array(outputs.cpu().detach().numpy().tolist())
+                    tmp = np.zeros_like(outputs)
+                    tmp[np.arange(len(outputs)), outputs.argmax(1)] = 1
+                    outputs = tmp
                 dev_outputs.extend(outputs.tolist())
                 dev_targets.extend(labels.cpu().detach().numpy().tolist())
 
@@ -131,8 +180,14 @@ class Trainer:
                 loss = self.criterion(outputs, labels)
                 # val_loss = val_loss + ((1 / (dev_step + 1))) * (loss.item() - val_loss)
                 total_loss += loss.item()
-                outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
-                outputs = (np.array(outputs) > 0.6).astype(int)
+                if self.model_name == "classification":
+                    outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
+                    outputs = (np.array(outputs) > 0.6).astype(int)
+                else:
+                    outputs = np.array(outputs.cpu().detach().numpy().tolist())
+                    tmp = np.zeros_like(outputs)
+                    tmp[np.arange(len(outputs)), outputs.argmax(1)] = 1
+                    outputs = tmp
                 test_outputs.extend(outputs.tolist())
                 test_targets.extend(labels.cpu().detach().numpy().tolist())
 
@@ -147,20 +202,28 @@ class Trainer:
         model.to(self.device)
         with torch.no_grad():
             inputs = tokenizer.encode_plus(text=text,
-                                        add_special_tokens=True,
-                                        max_length=args.max_seq_len,
-                                        truncation='longest_first',
-                                        padding="max_length",
-                                        return_token_type_ids=True,
-                                        return_attention_mask=True,
-                                        return_tensors='pt')
+                                           add_special_tokens=True,
+                                           max_length=args.max_seq_len,
+                                           truncation='longest_first',
+                                           padding="max_length",
+                                           return_token_type_ids=True,
+                                           return_attention_mask=True,
+                                           return_tensors='pt')
             token_ids = inputs['input_ids'].to(self.device)
             attention_masks = inputs['attention_mask'].to(self.device)
             token_type_ids = inputs['token_type_ids'].to(self.device)
             outputs = model(token_ids, attention_masks, token_type_ids)
-            outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
-            outputs = (np.array(outputs) > 0.5).astype(int)
-            outputs = np.where(outputs[0] == 1)[0].tolist()
+            
+            if self.model_name == "classification":
+                outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
+                outputs = (np.array(outputs) > 0.5).astype(int)
+                outputs = np.where(outputs[0] == 1)[0].tolist()
+            else:
+                outputs = np.array(outputs.cpu().detach().numpy().tolist())
+                tmp = np.zeros_like(outputs)
+                tmp[np.arange(len(outputs)), outputs.argmax(1)] = 1
+                outputs = tmp
+
             if len(outputs) != 0:
                 outputs = [id2label[i] for i in outputs]
                 return outputs
@@ -187,6 +250,7 @@ def convert_json_label():
         label2id[label] = i
         id2label[i] = label
 
+
 def convert_txt_label():
     global fp, labels
     with open('./data/final_data/class.txt', 'r', encoding='utf-8') as fp:
@@ -207,6 +271,7 @@ def predict_json():
             print(text)
             result = trainer.predict(tokenizer, text, id2label, args)
             print(result)
+
 
 def predict_txt():
     global fp, text
@@ -258,7 +323,9 @@ if __name__ == '__main__':
     checkpoint_path = './checkpoints/best.pt'
     total_loss, test_outputs, test_targets = trainer.test(checkpoint_path)
     accuracy, micro_f1, macro_f1 = trainer.get_metrics(test_outputs, test_targets)
-    logger.info("【test】 loss：{:.6f} accuracy：{:.4f} micro_f1：{:.4f} macro_f1：{:.4f}".format(total_loss, accuracy, micro_f1, macro_f1))
+    logger.info(
+        "【test】 loss：{:.6f} accuracy：{:.4f} micro_f1：{:.4f} macro_f1：{:.4f}".format(total_loss, accuracy, micro_f1,
+                                                                                    macro_f1))
     report = trainer.get_classification_report(test_outputs, test_targets, labels)
     logger.info(report)
 
