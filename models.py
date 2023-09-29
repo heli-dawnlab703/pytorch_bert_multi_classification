@@ -26,6 +26,7 @@ class BertForMultiLabelClassification(nn.Module):
 class BertForRank(nn.Module):
     def __init__(self, args):
         super(BertForRank, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.bert = BertModel.from_pretrained(args.bert_dir)
         self.bert_config = self.bert.config
         out_dims = self.bert_config.hidden_size
@@ -33,8 +34,12 @@ class BertForRank(nn.Module):
         self.linear = nn.Linear(out_dims, args.num_tags)
         # 初始化标签嵌入
         self.label_num = args.num_tags
-        self.label = nn.Parameter(torch.randn(self.label_num, 768))
         self.tanh = nn.Tanh()
+
+        # self.label = nn.Parameter(torch.randn(self.label_num, 768))
+
+        self.label = torch.zeros((6, 768)).to(self.device)
+        self.label[torch.arange(6), torch.arange(6)] = 1
 
     def forward(self, token_ids, attention_masks, token_type_ids):
         bert_outputs = self.bert(

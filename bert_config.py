@@ -30,16 +30,16 @@ class Args:
 
         parser.add_argument('--max_seq_len', default=128, type=int)
 
-        parser.add_argument('--eval_batch_size', default=2, type=int)
+        parser.add_argument('--eval_batch_size', default=16, type=int)
 
         parser.add_argument('--swa_start', default=3, type=int,
                             help='the epoch when swa start')
 
-        parser.add_argument('--model_name', default="rank", type=str,
+        parser.add_argument('--model_name', default="classification", type=str,
                             help='model name [rank,classification]')
 
         # train args
-        parser.add_argument('--train_epochs', default=15, type=int,
+        parser.add_argument('--train_epochs', default=5, type=int,
                             help='Max training epoch')
 
         parser.add_argument('--dropout_prob', default=0.1, type=float,
@@ -61,7 +61,7 @@ class Args:
 
         parser.add_argument('--adam_epsilon', default=1e-8, type=float)
 
-        parser.add_argument('--train_batch_size', default=2, type=int)
+        parser.add_argument('--train_batch_size', default=16, type=int)
 
         parser.add_argument('--eval_model', default=True, action='store_true',
                             help='whether to eval model after training')

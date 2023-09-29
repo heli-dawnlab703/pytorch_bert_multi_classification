@@ -216,17 +216,23 @@ class Trainer:
             
             if self.model_name == "classification":
                 outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
-                outputs = (np.array(outputs) > 0.5).astype(int)
+                outputs = (np.array(outputs) > 0.6).astype(int)
                 outputs = np.where(outputs[0] == 1)[0].tolist()
             else:
                 outputs = np.array(outputs.cpu().detach().numpy().tolist())
                 tmp = np.zeros_like(outputs)
                 tmp[np.arange(len(outputs)), outputs.argmax(1)] = 1
-                outputs = tmp
+                outputs = tmp[0].tolist()
 
             if len(outputs) != 0:
-                outputs = [id2label[i] for i in outputs]
+                if self.model == 'classification':
+                    outputs = [id2label[i] for i in outputs]
+                else:
+                    indices = [i for i, x in enumerate(outputs) if x == 1]
+                    # outputs = [id2label[i] for i in indices]
+                    outputs = indices
                 return outputs
+
             else:
                 return '不好意思，我没有识别出来'
 
