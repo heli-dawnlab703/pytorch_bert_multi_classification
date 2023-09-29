@@ -13,7 +13,8 @@ class Args:
         parser.add_argument('--output_dir', default='./checkpoints/',
                             help='the output dir for model checkpoints')
 
-        parser.add_argument('--bert_dir', default='./model_hub/bert_base_chinese/',
+        # roberta-wwm-ext-large bert-base-chinese
+        parser.add_argument('--bert_dir', default='./model_hub/roberta-wwm-ext-large/',
                             help='bert dir for uer')
         parser.add_argument('--data_dir', default='./data/final_data/',
                             help='data dir for uer')

@@ -36,10 +36,10 @@ class BertForRank(nn.Module):
         self.label_num = args.num_tags
         self.tanh = nn.Tanh()
 
-        # self.label = nn.Parameter(torch.randn(self.label_num, 768))
+        self.label = nn.Parameter(torch.randn(self.label_num, 1024))
 
-        self.label = torch.zeros((6, 768)).to(self.device)
-        self.label[torch.arange(6), torch.arange(6)] = 1
+        # self.label = torch.zeros((6, 768)).to(self.device)
+        # self.label[torch.arange(6), torch.arange(6)] = 1
 
     def forward(self, token_ids, attention_masks, token_type_ids):
         bert_outputs = self.bert(

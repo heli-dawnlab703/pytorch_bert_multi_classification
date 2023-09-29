@@ -1,5 +1,5 @@
 python main.py \
---bert_dir="./model_hub/bert_base_chinese/" \
+--bert_dir="./model_hub/bert-base-chinese/" \
 --data_dir="./data/final_data/" \
 --log_dir="./logs/" \
 --output_dir="./checkpoints/" \

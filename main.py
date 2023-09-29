@@ -216,7 +216,7 @@ class Trainer:
             
             if self.model_name == "classification":
                 outputs = torch.sigmoid(outputs).cpu().detach().numpy().tolist()
-                outputs = (np.array(outputs) > 0.6).astype(int)
+                outputs = (np.array(outputs) > 0.5).astype(int)
                 outputs = np.where(outputs[0] == 1)[0].tolist()
             else:
                 outputs = np.array(outputs.cpu().detach().numpy().tolist())
@@ -311,14 +311,14 @@ if __name__ == '__main__':
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.train_batch_size,
                               sampler=train_sampler,
-                              num_workers=2)
+                              num_workers=0)
 
     dev_out = preprocess.get_out(processor, './data/tianchi/dev.txt', args, label2id, 'dev')
     dev_features, dev_callback_info = dev_out
     dev_dataset = dataset.MLDataset(dev_features)
     dev_loader = DataLoader(dataset=dev_dataset,
                             batch_size=args.eval_batch_size,
-                            num_workers=2)
+                            num_workers=0)
 
     trainer = Trainer(args, train_loader, dev_loader, dev_loader)
     # 训练和验证

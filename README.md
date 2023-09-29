@@ -7,3 +7,14 @@
 # error
 1. GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.git
 [解决方法](https://blog.csdn.net/qq_39564555/article/details/100051051)
+
+# 调优
+
+## bert_base_chinese
+--lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
+
+## roberta-wwm-ext-large
+--lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
+
+分类: 不太行 阈值为0.5
+--lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
