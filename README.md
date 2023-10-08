@@ -12,9 +12,12 @@
 
 ## bert_base_chinese
 --lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
+--lr=3e-6 --model_name rank --other_lr=3e-4 --train_batch_size=32 --eval_batch_size=32 --train_epochs=11 --bert_dir ./model_hub/bert-base-chinese
+
 
 ## roberta-wwm-ext-large
 --lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
-
+--lr=3e-6 --model_name rank --other_lr=3e-4 --train_batch_size=16 --eval_batch_size=16 --train_epochs=11 --bert_dir ./model_hub/roberta-wwm-ext-large
 分类: 不太行 阈值为0.5
 --lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
+【test】 loss：607.445513 accuracy：0.8530 micro_f1：0.8530 macro_f1：0.8180

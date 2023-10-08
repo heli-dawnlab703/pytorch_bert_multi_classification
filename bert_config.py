@@ -12,9 +12,10 @@ class Args:
         # args for path
         parser.add_argument('--output_dir', default='./checkpoints/',
                             help='the output dir for model checkpoints')
+        parser.add_argument('--bert_label_hidden', default = 1024, help = ' bert rank model label hidden')
 
-        # roberta-wwm-ext-large bert-base-chinese
-        parser.add_argument('--bert_dir', default='./model_hub/roberta-wwm-ext-large/',
+        #   ./model_hub/bert-base-chinese/     ./model_hub/roberta-wwm-ext-large/
+        parser.add_argument('--bert_dir', default='./model_hub/bert-base-chinese/',
                             help='bert dir for uer')
         parser.add_argument('--data_dir', default='./data/final_data/',
                             help='data dir for uer')
