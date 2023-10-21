@@ -17,6 +17,22 @@ class MLDataset(Dataset):
         self.token_type_ids = [torch.tensor(example.token_type_ids).long() for example in features]
         self.labels = [torch.tensor(example.labels).float() for example in features]
 
+        # 计算标签权重
+        lab = [example.labels for example in features]
+        lab_dict = {}
+        for i in lab:
+            idx = i.index(1)
+            ct = lab_dict.get(idx,0)
+            lab_dict[idx] = ct + 1
+        all_ct = 0
+        for i in lab_dict:
+            all_ct += lab_dict[i]
+        for i in lab_dict:
+            lab_dict[i] = lab_dict[i] / all_ct
+        for i in lab_dict:
+            lab_dict[i] = 1 / lab_dict[i]
+        self.weight = [lab_dict[example.labels.index(1)] for example in features]
+
     def __len__(self):
         return self.nums
 

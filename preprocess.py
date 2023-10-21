@@ -131,6 +131,8 @@ def convert_examples_to_features(examples, max_seq_len, bert_dir, label2id):
     logger.info(f'Convert {len(examples)} examples to features')
 
     for i, example in enumerate(examples):
+        # example.text = example.text.replace("糖尿病","").replace("糖尿","")
+        # example.text = example.text.replace("Ⅱ","2").replace("ii","2").replace("i","1").replace("I","1")
         feature, tmp_callback = convert_bert_example(
             ex_idx=i,
             example=example,

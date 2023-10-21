@@ -21,3 +21,7 @@
 分类: 不太行 阈值为0.5
 --lr=3e-5  --model_name rank --other_lr=3e-4 --train_batch_size=64 --eval_batch_size=64 --train_epochs=11
 【test】 loss：607.445513 accuracy：0.8530 micro_f1：0.8530 macro_f1：0.8180
+
+
+# 改版后
+使用高斯进行分类  效果达到0.88%
