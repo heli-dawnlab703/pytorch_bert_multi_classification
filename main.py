@@ -65,6 +65,7 @@ class MarginLoss(nn.Module):
 
         # 这种排序方式是自己的正 > 所有的负  这个效果还行,配合margin0.05 可以达到0.87
         batch = score.shape[0]
+        score = -score
         pos = torch.masked_select(score, label > 0.5).view(batch, -1)  # (batch,pos_num=1)
         neg = torch.masked_select(score, label < 0.5).unsqueeze(0).repeat(batch, 1)  # (batch,neg_num=5)
         neg_num = neg.shape[1]
